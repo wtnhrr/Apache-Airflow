@@ -1,0 +1,73 @@
+# Python
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# PySpark
+metastore_db/
+spark-warehouse/
+derby.log
+
+# Airflow
+airflow.cfg
+unittests.cfg
+webserver_config.py
+airflow.db
+airflow.db-journal
+logs/
+dags/__pycache__/
+dags/*.pyc
+dags/*.pyo
+dags/*.pyd
+
+# Docker
+*.log
+docker-compose.override.yml
+docker-compose.override.yaml
+.dockerignore
+
+# Kafka
+kafka-logs/
+
+# PostgreSQL
+pgdata/
+
+# MongoDB
+data/
+
+# pytest
+.pytest_cache/
+*.pytest_cache
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Anaconda
+.conda/
+.condarc
+.conda-environment
+*.conda
+*.ipynb_checkpoints

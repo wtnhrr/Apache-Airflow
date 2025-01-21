@@ -1,15 +1,16 @@
-FROM apache/airflow:2.6.2-python3.9
+FROM apache/airflow:2.10.4
 
 USER root
-# Instale dependências adicionais
-RUN apt-get update && apt-get install -y \
-    default-jre default-jdk vim nano \
-    && rm -rf /var/lib/apt/lists/*
-# Instale dependências do Python (ex: psycopg2, pymongo, etc.)
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+         openjdk-17-jre-headless \
+  && apt-get autoremove -yqq --purge \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
 
 USER airflow
 
-RUN pip install psycopg2-binary pymongo kafka-python pyspark
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 
-# Copie DAGs (se quiser em tempo de build, senão use volumes)
-# COPY dags /opt/airflow/dags
+RUN pip install --no-cache-dir "apache-airflow==${AIRFLOW_VERSION}" apache-airflow-providers-apache-spark==2.1.3 pymongo kafka-python kafka-python-ng

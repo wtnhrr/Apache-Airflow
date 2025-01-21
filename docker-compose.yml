@@ -1,6 +1,6 @@
 services:
   # ---------------------------------------------------------------------------
-  # ZOOKEEPER (necessário para Kafka)
+  # ZOOKEEPER
   # ---------------------------------------------------------------------------
   zookeeper:
     image: bitnami/zookeeper:3.8
@@ -27,6 +27,10 @@ services:
       - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092
       - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
       - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_MESSAGE_MAX_BYTES=200000000 # ~200 MB
+      - KAFKA_CFG_REPLICA_FETCH_MAX_BYTES=200000000
+      - KAFKA_CFG_FETCH_MAX_BYTES=200000000
+      - KAFKA_CFG_SOCKET_REQUEST_MAX_BYTES=200000000
     ports:
       - "9092:9092"
     networks:
@@ -67,7 +71,7 @@ services:
       - mongodata:/data/db
 
   # ---------------------------------------------------------------------------
-  # DEBEZIUM CONNECT (para capturar mudanças em Postgres/Mongo e enviar para Kafka)
+  # DEBEZIUM CONNECT
   # ---------------------------------------------------------------------------
   debezium:
     image: debezium/connect:2.3
@@ -86,7 +90,6 @@ services:
       VALUE_CONVERTER_SCHEMAS_ENABLE: "false"
       KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
       VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
-      # Exemplo: conectar com Postgres e Mongo
       # Para cada conector será preciso adicionar .json de configuração na pasta "connectors" ou via REST
     ports:
       - "8083:8083"
@@ -99,23 +102,29 @@ services:
   # SPARK MASTER
   # ---------------------------------------------------------------------------
   spark-master:
-    image: bitnami/spark:3.5
+    image: bitnami/spark:3.5.4
     container_name: spark-master
     environment:
       - SPARK_MODE=master
+      - SPARK_CONNECT_ENABLE=true
+      - SPARK_CONNECT_SERVER_PORT=15002
+      - SPARK_SUBMIT_DEPLOYMODE=client
     volumes:
-      - ./spark-apps:/opt/spark-apps
+      - ./spark-apps:/opt/bitnami/spark/spark-apps
+      - ./spark-master/scripts/start-connect-server.sh:/opt/bitnami/scripts/start-connect-server.sh
     ports:
       - "7077:7077"  # Spark Master
       - "8080:8080"  # Spark Web UI
+      - "15002:15002"  # Spark Connect Server
     networks:
       - my-net
+    command: ["/bin/bash", "-c", "/opt/bitnami/scripts/start-connect-server.sh"]
 
   # ---------------------------------------------------------------------------
   # SPARK WORKER
   # ---------------------------------------------------------------------------
   spark-worker:
-    image: bitnami/spark:3.5
+    image: bitnami/spark:3.5.4
     container_name: spark-worker
     depends_on:
       - spark-master
@@ -123,7 +132,7 @@ services:
       - SPARK_MODE=worker
       - SPARK_MASTER_URL=spark://spark-master:7077
     volumes:
-      - ./spark-apps:/opt/spark-apps
+      - ./spark-apps:/opt/bitnami/spark/spark-apps
     ports:
       - "8081:8081"
     networks:
@@ -133,7 +142,6 @@ services:
   # AIRFLOW
   # ---------------------------------------------------------------------------
   airflow:
-    # Caso prefira uma imagem já pronta, pode usar apache/airflow:2.6 ou similar
     build:
       context: ./airflow
       dockerfile: Dockerfile
@@ -155,6 +163,7 @@ services:
       AIRFLOW_GID: 50000
     volumes:
       - ./airflow/dags:/opt/airflow/dags
+      - ./spark-apps:/opt/airflow/spark-apps
     ports:
       - "8089:8080"
     networks:
